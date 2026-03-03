@@ -20,7 +20,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="RAG Pipeline")
 
     # 基础输入
-    parser.add_argument("--device", type=str, default="cuda:5")
+    parser.add_argument("--device", type=str, default="cuda:0")
     parser.add_argument("--cfg_name", type=str, default="fiqa", help="Config name in configs/")
 
     # LLM

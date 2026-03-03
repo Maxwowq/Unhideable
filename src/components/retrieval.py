@@ -55,7 +55,7 @@ class VectorRetriever(Retriever):
         elif self.config.retrieval["embed"]['provider'] == 'hf':
             try:
                 embed_model = HuggingFaceEmbeddings(
-                    model_name=self.config.retrieval["embed"]['model_dir'],
+                    model_name=self.config.retrieval["embed"]['model_name'],
                     model_kwargs={'device': self.device},
                     encode_kwargs={'device': self.device, 'batch_size': self.config.retrieval["embed"]["retrival_database_batch_size"], "normalize_embeddings": True}
                     )

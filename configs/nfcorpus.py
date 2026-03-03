@@ -28,7 +28,7 @@ nfcorpus = VRConfig(
             "top_n": 5,
             "embed": {
                 "provider": "hf",
-                "model_name": "bge-large-en-v1.5",
+                "model_name": "BAAI/bge-large-en-v1.5",
                 "model_dir": "",
                 "retrival_database_batch_size": 256
             }
