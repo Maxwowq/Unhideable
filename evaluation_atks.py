@@ -1,4 +1,4 @@
-from src import evaluate_atk_results, evaluate_atk_results_rougeL
+from src import evaluate_atk_results
 from pathlib import Path
 
 def parse_setting_from_path(save_path: str):

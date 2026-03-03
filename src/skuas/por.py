@@ -6,7 +6,7 @@ from copy import deepcopy
 from typing import Callable, Dict, List, Optional, Tuple, Union
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain.schema import Document
+from langchain_core.documents import Document
 from scipy.special import softmax
 
 import uuid
