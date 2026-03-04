@@ -37,7 +37,8 @@ def AtkRTFPipeline(cfg, args,
                                intent_filter, output_filter,
                                cfg, args)
 
-    rag_theif_attacker = RtfQueryGenerator(llm_tool, save_path="rtf_"+args.cfg_name+"_"+str(bool(args.rewriter))+str(bool(args.reranker))+str(bool(args.extractor))+args.llm_model+".json")
+    safe_model_name = args.llm_model.replace("/", "_").replace("\\", "_")
+    rag_theif_attacker = RtfQueryGenerator(llm_tool, save_path=f"rtf_{args.cfg_name}_{bool(args.rewriter)}{bool(args.reranker)}{bool(args.extractor)}{safe_model_name}.json")
 
     # --- load state if exists --- #
     if os.path.exists(rag_theif_attacker.state_file):
