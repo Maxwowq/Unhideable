@@ -6,40 +6,36 @@
 import os
 from pathlib import Path
 import json
-from pathlib import Path
 from typing import List, Tuple
 
 import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
-import torch
 
 
 # 配置参数
 SAVE_DIR = "layers/space"
-TOP_K = 1000
-MODEL_ID = "Qwen/Qwen3-32B"
+MODEL_ID = "Qwen/Qwen3-8B"
 CUDA_DEVICE = "0"
 RESULT_PATH = "./cipher_attack/results/gpt_space.json"
 ASSISTANT_TOKEN = "<|im_start|>assistant\n"
 
 
-def save_topk_attn_hook(layer_idx: int, save_dir: Path, top_k: int, asst_start_idx: int):
+def save_topk_attn_hook(layer_idx: int, save_dir: Path, asst_start_idx: int):
     """
     创建 attention hook 函数
-    
+
     Args:
         layer_idx: 层索引
         save_dir: 保存目录
-        top_k: 保留的 top-k 数量
         asst_start_idx: Assistant 起始索引
     """
     def hook(module: torch.nn.Module, input: torch.Tensor, output: Tuple[torch.Tensor, ...]) -> None:
         # output[1] 形状: [1, heads, seq_len, seq_len]
         with torch.no_grad():
-            # 1. 提取权重并只保留 Assistant 区域的行 (Query)
-            # 形状: [heads, prompt_len, asst_len]
-            attn = output[1][0, :asst_start_idx, asst_start_idx:]
+            # 1. 提取权重：Assistant 作为 Query，Prompt 作为 Key
+            # 形状: [heads, asst_len, prompt_len]
+            attn = output[1][0, :, asst_start_idx:, :asst_start_idx]
             
             # 2. 量化为 INT8 (0-255) 并转到 CPU
             attn_uint8 = (attn * 255).to(torch.uint8).cpu().numpy()
@@ -138,18 +134,8 @@ def main():
         attn_implementation="eager"            # 必须保持 eager 模式以获取 attention
     )
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
-    
-    # 设置 attention 实现为 eager，以支持 output_attentions=True
-    model.set_attn_implementation('eager')
+
     print("已设置 attention 实现为 'eager' 模式")
-    
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    if device == "cuda":
-        model = model.to(device)
-        print(f"模型已加载至 CUDA 设备")
-    else:
-        print(f"模型已加载至 CPU 设备")
-    
     print("模型加载完成")
     
     # 4. 加载实验数据
@@ -173,19 +159,19 @@ def main():
     
     asst_start_idx = locate_assistant_start(full_id_list, asst_token_ids, MODEL_ID)
     print(f"定位成功！Assistant 起始索引: {asst_start_idx}\n总序列长度: {seq_len}")
-    
+
     # 7. 将输入移至设备
-    inputs = inputs.to(device)
-    
+    inputs = inputs.to(model.device)
+
     # 8. 注册 hooks（每隔4层保存一层：0, 4, 8, ...）
     hooks = []
     for i in range(0, len(model.model.layers), 4):
         h = model.model.layers[i].self_attn.register_forward_hook(
-            save_topk_attn_hook(i, save_dir, TOP_K, asst_start_idx)
+            save_topk_attn_hook(i, save_dir, asst_start_idx)
         )
         hooks.append(h)
-    
-    # 9. 执行前向传播
+
+    # 8. 执行前向传播
     print("开始前向传播 (Prefill)... 这可能需要 1-2 分钟")
     try:
         with torch.no_grad():
@@ -194,10 +180,10 @@ def main():
         print(f"前向传播失败: {e}")
         raise
     finally:
-        # 10. 清理 hooks
+        # 9. 清理 hooks
         for h in hooks:
             h.remove()
-    
+
     print(f"\n实验完成！每隔4层的 Attention 数据已保存至: {SAVE_DIR}")
 
 

@@ -24,12 +24,12 @@ def load_attention_data(file_path: str):
 def reconstruct_attention_matrix(attention_uint8):
     """
     从保存的数据反归一化 attention 矩阵
-    
+
     Args:
-        attention_uint8: 量化的 attention, shape [heads, prompt_len, asst_len]
-        
+        attention_uint8: 量化的 attention, shape [heads, asst_len, prompt_len]
+
     Returns:
-        反归一化的 attention 矩阵, shape [heads, prompt_len, asst_len]
+        反归一化的 attention 矩阵, shape [heads, asst_len, prompt_len]
     """
     return attention_uint8.astype(np.float32) / 255.0
 
@@ -37,11 +37,11 @@ def reconstruct_attention_matrix(attention_uint8):
 def apply_gamma_interpolation(attention, gamma=2.0):
     """
     使用幂函数插值（gamma校正）增强attention数值对比度
-    
+
     Args:
-        attention: attention矩阵, shape [heads, prompt_len, asst_len]
+        attention: attention矩阵, shape [heads, asst_len, prompt_len]
         gamma: 插值参数，gamma > 1 时高值更突出，gamma < 1 时低值更明显
-        
+
     Returns:
         增强后的 attention 矩阵
     """
@@ -55,25 +55,25 @@ def apply_gamma_interpolation(attention, gamma=2.0):
 def apply_spatial_interpolation(attention, scale_factor=2.0):
     """
     使用空间插值放大attention矩阵，让高亮线条更粗
-    
+
     Args:
-        attention: attention矩阵, shape [heads, prompt_len, asst_len]
+        attention: attention矩阵, shape [heads, asst_len, prompt_len]
         scale_factor: 缩放因子，>1 表示放大，高亮线条会更粗
-        
+
     Returns:
         空间插值后的 attention 矩阵
     """
     if scale_factor <= 1.0:
         return attention
-    
-    heads, prompt_len, asst_len = attention.shape
-    zoomed = np.zeros((heads, int(prompt_len * scale_factor), int(asst_len * scale_factor)), dtype=attention.dtype)
-    
-    
+
+    heads, asst_len, prompt_len = attention.shape
+    zoomed = np.zeros((heads, int(asst_len * scale_factor), int(prompt_len * scale_factor)), dtype=attention.dtype)
+
+
     for h in range(heads):
         # 使用双三次插值（order=3）进行平滑放大
         zoomed[h] = zoom(attention[h], scale_factor, order=3, mode='nearest', prefilter=True)
-    
+
     return zoomed
 
 
@@ -98,9 +98,9 @@ def visualize_layer(layer_idx, layer_dir, output_path=None, gamma=2.0, scale=2.0
     
     print(f"正在反归一化 attention 矩阵...")
     attention = reconstruct_attention_matrix(attention_uint8)
-    
-    heads, prompt_len, asst_len = attention.shape
-    print(f"Attention 形状: [{heads}, {prompt_len}, {asst_len}]")
+
+    heads, asst_len, prompt_len = attention.shape
+    print(f"Attention 形状: [{heads}, {asst_len}, {prompt_len}]")
     
     # 对每个 head 用最大值归一化
     print(f"正在归一化 attention（每个 head 除以最大值）...")
@@ -137,8 +137,8 @@ def visualize_layer(layer_idx, layer_dir, output_path=None, gamma=2.0, scale=2.0
         
         im = ax.imshow(attention[h], cmap='viridis', aspect='auto', vmin=0, vmax=1, interpolation='nearest')
         ax.set_title(f'Head {h}')
-        ax.set_xlabel('Assistant Position (Key)')
-        ax.set_ylabel('Prompt Position (Query)')
+        ax.set_xlabel('Prompt Position (Key)')
+        ax.set_ylabel('Assistant Position (Query)')
         plt.colorbar(im, ax=ax, label='Attention')
     
     # 隐藏多余的子图
