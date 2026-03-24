@@ -24,12 +24,12 @@ def load_attention_data(file_path: str):
 def reconstruct_attention_matrix(attention_uint8):
     """
     从保存的数据反归一化 attention 矩阵
-    
+
     Args:
-        attention_uint8: 量化的 attention, shape [heads, prompt_len, asst_len]
-        
+        attention_uint8: 量化的 attention, shape [heads, asst_len, prompt_len]
+
     Returns:
-        反归一化的 attention 矩阵, shape [heads, prompt_len, asst_len]
+        反归一化的 attention 矩阵, shape [heads, asst_len, prompt_len]
     """
     return attention_uint8.astype(np.float32) / 255.0
 
@@ -83,8 +83,8 @@ def visualize_layer_max_attention(layer_idx, layer_dir, output_path=None):
     print(f"正在反归一化 attention 矩阵...")
     attention = reconstruct_attention_matrix(attention_uint8)
     
-    heads, prompt_len, asst_len = attention.shape
-    print(f"Attention 形状: [{heads}, {prompt_len}, {asst_len}]")
+    heads, asst_len, prompt_len = attention.shape
+    print(f"Attention 形状: [{heads}, {asst_len}, {prompt_len}]")
     
     # 计算最大注意力索引
     print(f"正在计算最大注意力索引...")
@@ -105,8 +105,8 @@ def visualize_layer_max_attention(layer_idx, layer_dir, output_path=None):
         # 绘制散点图
         ax.scatter(x_positions, y_positions, c='steelblue', s=2, alpha=0.6, edgecolors='navy', linewidth=0.5)
         ax.set_title(f'Head {h} - Maximum Attention Focus Points', fontsize=10)
-        ax.set_xlabel('Assistant Token Index (Key)', fontsize=9)
-        ax.set_ylabel('Prompt Token Index (Query)', fontsize=9)
+        ax.set_xlabel('Assistant Position (Query)', fontsize=9)
+        ax.set_ylabel('Prompt Position (Key)', fontsize=9)
         ax.set_xlim([-0.5, asst_len - 0.5])
         ax.set_ylim([-0.5, prompt_len - 0.5])
         ax.grid(True, alpha=0.3, linestyle='--')

@@ -14,10 +14,10 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
 
 # 配置参数
-SAVE_DIR = "layers/space"
+SAVE_DIR = "layers/safe"
 MODEL_ID = "Qwen/Qwen3-8B"
 CUDA_DEVICE = "0"
-RESULT_PATH = "./cipher_attack/results/gpt_space.json"
+RESULT_PATH = "./cipher_attack/results/gpt_safe.json"
 ASSISTANT_TOKEN = "<|im_start|>assistant\n"
 
 
