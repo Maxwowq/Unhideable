@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 # 默认的读取位置和保存位置
-LAYER_DIR = "./layers/space"
-OUTPUT_DIR = "./max/space"
+LAYER_DIR = "./layers/safe"
+OUTPUT_DIR = "./max/safe"
 
 
 def load_attention_data(file_path: str):
@@ -46,19 +46,9 @@ def compute_max_attention_indices(attention):
         最大注意力索引数组, shape [heads, asst_len]
         对于每个 head 和每个 assistant 位置，返回该位置在 prompt 侧最大注意力的索引
     """
-    heads, asst_len, prompt_len = attention.shape
-
-    # 初始化最大注意力索引数组
-    max_indices = np.zeros((heads, asst_len), dtype=int)
-
-    for h in range(heads):
-        for a in range(asst_len):
-            # 获取第 h 个 head 中，第 a 个 assistant 位置对所有 prompt 位置的注意力
-            attn_weights = attention[h, a, :]
-
-            # 找到最大注意力的索引
-            max_idx = np.argmax(attn_weights)
-            max_indices[h, a] = max_idx
+    # 使用向量化操作一次性计算所有最大注意力索引
+    # axis=2 表示在 prompt_len 维度上找最大值
+    max_indices = np.argmax(attention, axis=2)
 
     return max_indices
 
@@ -103,18 +93,13 @@ def visualize_layer_max_attention(layer_idx, layer_dir, output_path=None):
         y_positions = max_indices[h]        # 对应的最大注意力 Prompt token 索引
         
         # 绘制散点图
-        ax.scatter(x_positions, y_positions, c='steelblue', s=2, alpha=0.6, edgecolors='navy', linewidth=0.5)
+        ax.scatter(x_positions, y_positions, c='steelblue', s=2, alpha=0.6, linewidth=0.5)
         ax.set_title(f'Head {h} - Maximum Attention Focus Points', fontsize=10)
         ax.set_xlabel('Assistant Position (Query)', fontsize=9)
         ax.set_ylabel('Prompt Position (Key)', fontsize=9)
         ax.set_xlim([-0.5, asst_len - 0.5])
         ax.set_ylim([-0.5, prompt_len - 0.5])
         ax.grid(True, alpha=0.3, linestyle='--')
-        
-        # 添加对角线参考线（表示一对一对应）
-        min_dim = min(prompt_len, asst_len)
-        ax.plot([0, min_dim], [0, min_dim], 'r--', alpha=0.3, linewidth=1, label='Diagonal (1:1)')
-        ax.legend(fontsize=8)
     
     plt.suptitle(f'Layer {layer_idx} - Maximum Attention Focus Points', 
                  fontsize=12, fontweight='bold')

@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 # 默认的读取位置和保存位置
-LAYER_DIR = "./layers/safe"
-OUTPUT_DIR = "./entropy/safe"
+LAYER_DIR = "./layers/space"
+OUTPUT_DIR = "./entropy/space"
 
 
 def load_attention_data(file_path: str):
